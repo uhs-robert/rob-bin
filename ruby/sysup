@@ -23,12 +23,15 @@ class TeeIO
 
   attr_writer :logging
 
-  def write(*args) = @primary.write(*args).tap { log(args.map(&:to_s).join) }
+  def write(*args) = @primary.write(*args).tap { log(args.join) }
   def puts(*args)  = @primary.puts(*args).tap  { (args.empty? ? [''] : args).each { |a| log("#{a}\n") } }
-  def print(*args) = @primary.print(*args).tap { log(args.map(&:to_s).join) }
+  def print(*args) = @primary.print(*args).tap { log(args.join) }
   def flush        = @primary.flush.tap        { @secondary.flush }
   def tty?         = @primary.tty?
-  def sync=(val);   @primary.sync = val; end
+
+  def sync=(val)
+    @primary.sync = val
+  end
 
   def log_only(msg)
     @secondary.write("#{msg}\n")
@@ -474,7 +477,7 @@ class SystemUpdater
       puts "#{Style::OK}#{total} updated. Log: file://#{@log_file}#{Style::NC}"
       puts "#{Style::WARNING}Reboot required.#{Style::NC}" if @dnf.needs_reboot
     else
-      File.delete(@log_file) if File.exist?(@log_file)
+      FileUtils.rm_f(@log_file)
     end
   end
 
