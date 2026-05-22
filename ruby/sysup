@@ -43,15 +43,17 @@ class TeeIO
     return unless @logging
 
     clean = raw.gsub(ANSI_RE, '').gsub("\r\n", "\n")
-    clean.scan(/[^\r\n]*[\r\n]|[^\r\n]+\z/).each do |chunk|
-      if chunk.end_with?("\n")
-        @secondary.write("#{@line_buf}#{chunk.chomp}\n")
-        @line_buf = +''
-      elsif chunk.end_with?("\r")
-        @line_buf = +''
-      else
-        @line_buf << chunk
-      end
+    clean.scan(/[^\r\n]*[\r\n]|[^\r\n]+\z/).each { |chunk| log_chunk(chunk) }
+  end
+
+  def log_chunk(chunk)
+    if chunk.end_with?("\n")
+      @secondary.write("#{@line_buf}#{chunk.chomp}\n")
+      @line_buf = +''
+    elsif chunk.end_with?("\r")
+      @line_buf = +''
+    else
+      @line_buf << chunk
     end
   end
 end
@@ -87,9 +89,9 @@ end
 module Shell
   module_function
 
-  def pty_run(*args)
+  def pty_run(*)
     rows, cols = IO.console&.winsize || [24, 80]
-    PTY.spawn(*args) do |reader, _writer, pid|
+    PTY.spawn(*) do |reader, _writer, pid|
       setup_reader(reader, rows, cols)
       copy_stream(reader)
       Process.wait(pid)
@@ -108,31 +110,32 @@ module Shell
     # End of stream
   end
 
-  def capture(*args)
-    stdout, _stderr, _status = Open3.capture3(*args)
+  def capture(*)
+    stdout, _stderr, _status = Open3.capture3(*)
     stdout
   end
+
+  SPINNER_FRAMES = %w[⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏].freeze
 
   def with_spinner(label = '')
     return yield unless $stdout.tty?
 
-    frames = %w[⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏]
     $stdout.print("\e[?25l")
-    spinner = Thread.new do
-      i = 0
-      loop do
-        $stdout.print("\r#{Style::ACCENT}#{frames[i % frames.length]}#{Style::NC} #{Style::FG_DIM}#{label}#{Style::NC}")
-        $stdout.flush
-        sleep(0.08)
-        i += 1
-      end
-    end
+    spinner = Thread.new { spin_loop(label) }
     yield
   ensure
     spinner&.kill
     spinner&.join
     $stdout.print("\r\e[2K")
     $stdout.print("\e[?25h")
+  end
+
+  def spin_loop(label)
+    SPINNER_FRAMES.cycle.each do |frame|
+      $stdout.print("\r#{Style::ACCENT}#{frame}#{Style::NC} #{Style::FG_DIM}#{label}#{Style::NC}")
+      $stdout.flush
+      sleep(0.08)
+    end
   end
 end
 
@@ -171,7 +174,9 @@ module UserInterface
 
   def show_terminal_prompt(reboot_msg, log_file)
     puts "#{Style::ERROR}#{reboot_msg}#{Style::NC}\n" unless reboot_msg.empty?
-    puts "\n#{Style::BRIGHT_RED}󰐥 (p) Poweroff#{Style::NC}  #{Style::BRIGHT_YELLOW} (r) Reboot#{Style::NC}  #{Style::INFO}󰝰 (l) Open Log#{Style::NC}  #{Style::FG_DIM}[Enter] Exit#{Style::NC}"
+    menu = "#{Style::BRIGHT_RED}󰐥 (p) Poweroff#{Style::NC}  #{Style::BRIGHT_YELLOW} (r) Reboot#{Style::NC}  " \
+           "#{Style::INFO}󰝰 (l) Open Log#{Style::NC}  #{Style::FG_DIM}[Enter] Exit#{Style::NC}"
+    puts "\n#{menu}"
 
     $stdin.reopen('/dev/tty')
     handle_user_choice($stdin.getch, log_file)
@@ -232,15 +237,19 @@ class DnfManager
     return if @updater.options[:skip_security]
 
     @updater.step('󰒃 Security Updates', 'Checking for security updates...') do
-      output = Shell.with_spinner('Checking security updates...') do
-        Shell.capture('sudo', 'dnf', 'check-update', '--security')
-      end
-      if output.include?('Security')
-        Shell.pty_run('sudo', 'dnf', 'update', '--security', *@updater.dnf_flags)
-        puts "#{Style::OK}Installed security updates.#{Style::NC}"
-      else
-        puts 'Nothing to do.'
-      end
+      apply_security_updates
+    end
+  end
+
+  def apply_security_updates
+    output = Shell.with_spinner('Checking security updates...') do
+      Shell.capture('sudo', 'dnf', 'check-update', '--security')
+    end
+    if output.include?('Security')
+      Shell.pty_run('sudo', 'dnf', 'update', '--security', *@updater.dnf_flags)
+      puts "#{Style::OK}Installed security updates.#{Style::NC}"
+    else
+      puts 'Nothing to do.'
     end
   end
 
@@ -286,16 +295,25 @@ class DnfManager
 
   def perform_kernel_maintenance
     @updater.step(' Performing Driver/Kernel Maintenance', 'Maintenance detected...') do
-      new_kernel = Shell.with_spinner('Querying kernel version...') do
-        Shell.capture('rpm', '-q', '--qf', '%{VERSION}-%{RELEASE}.%{ARCH}\n', 'kernel-core')
-      end
-                        .lines.map(&:strip).max
-      puts "#{Style::SECONDARY}Refreshing akmods for: #{new_kernel}#{Style::NC}"
-      system('sudo', 'akmods', '--force', '--kernel', new_kernel)
-      puts "#{Style::SECONDARY}Running dracut for: #{new_kernel}#{Style::NC}"
-      system('sudo', 'dracut', '--force', '--add', 'bluetooth', "/boot/initramfs-#{new_kernel}.img", new_kernel)
+      new_kernel = query_new_kernel
+      rebuild_kernel_modules(new_kernel)
       @needs_reboot = true
     end
+  end
+
+  def query_new_kernel
+    Shell.with_spinner('Querying kernel version...') do
+      # rubocop:disable Style/FormatStringToken -- rpm queryformat syntax, not Ruby format string
+      Shell.capture('rpm', '-q', '--qf', '%{VERSION}-%{RELEASE}.%{ARCH}\n', 'kernel-core')
+      # rubocop:enable Style/FormatStringToken
+    end.lines.map(&:strip).max
+  end
+
+  def rebuild_kernel_modules(new_kernel)
+    puts "#{Style::SECONDARY}Refreshing akmods for: #{new_kernel}#{Style::NC}"
+    system('sudo', 'akmods', '--force', '--kernel', new_kernel)
+    puts "#{Style::SECONDARY}Running dracut for: #{new_kernel}#{Style::NC}"
+    system('sudo', 'dracut', '--force', '--add', 'bluetooth', "/boot/initramfs-#{new_kernel}.img", new_kernel)
   end
 end
 
@@ -350,6 +368,7 @@ end
 # Orchestrates the system update process
 class SystemUpdater
   include UserInterface
+
   attr_reader :options, :dnf_flags
 
   def initialize
@@ -447,8 +466,8 @@ class SystemUpdater
     FileUtils.mkdir_p(log_dir)
     path = File.join(log_dir, "system_update_#{Time.now.strftime('%F_%H-%M-%S')}.log")
     @log_fh = File.open(path, 'w')
-    $stdout = TeeIO.new(STDOUT, @log_fh)
-    $stderr = TeeIO.new(STDERR, @log_fh)
+    $stdout = TeeIO.new($stdout, @log_fh)
+    $stderr = TeeIO.new($stderr, @log_fh)
     path
   end
 
@@ -464,7 +483,7 @@ class SystemUpdater
   end
 
   def any_updates?
-    @dnf.count + @flatpak.count > 0
+    (@dnf.count + @flatpak.count).positive?
   end
 
   def cleanup
