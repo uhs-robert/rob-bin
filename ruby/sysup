@@ -284,7 +284,7 @@ class DnfManager
   def perform_kernel_maintenance
     @updater.step(' Performing Driver/Kernel Maintenance', 'Maintenance detected...') do
       new_kernel = Shell.with_spinner('Querying kernel version...') do
-        Shell.capture('rpm', '-q', '--qf', '%<VERSION>s-%<RELEASE>s.%<ARCH>s\n', 'kernel-core')
+        Shell.capture('rpm', '-q', '--qf', '%{VERSION}-%{RELEASE}.%{ARCH}\n', 'kernel-core')
       end
                         .lines.map(&:strip).max
       puts "#{Style::SECONDARY}Refreshing akmods for: #{new_kernel}#{Style::NC}"
