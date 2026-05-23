@@ -41,8 +41,8 @@ module UserInterface
 
   def show_terminal_prompt(reboot_msg, log_file)
     puts "#{Style::ERROR}#{reboot_msg}#{Style::NC}\n" unless reboot_msg.empty?
-    menu = "#{Style::BRIGHT_RED}󰐥 (p) Poweroff#{Style::NC}  #{Style::BRIGHT_YELLOW} (r) Reboot#{Style::NC}  " \
-           "#{Style::INFO}󰝰 (l) Open Log#{Style::NC}  #{Style::FG_DIM}[Enter] Exit#{Style::NC}"
+    menu = "#{Style::BRIGHT_RED}󰐥 (p) Poweroff#{Style::NC}  #{Style::BRIGHT_YELLOW} (r) Reboot#{Style::NC}  " \
+           "#{Style::INFO}󰝰 (l) Open Log#{Style::NC}  #{Style::FG_DIM}󰿅 [any key] Exit#{Style::NC}"
     puts "\n#{menu}"
 
     $stdin.reopen('/dev/tty')

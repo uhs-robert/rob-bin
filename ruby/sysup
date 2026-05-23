@@ -68,7 +68,7 @@ class SystemUpdater
   end
 
   def cleanup_all
-    step(' Cleaning Up', 'Cleaning packages and configs...')
+    step(' Cleaning Up', 'Cleaning packages and configs...')
     @dnf.autoremove
     @flatpak.cleanup
     clean_leftover_rpm_configs

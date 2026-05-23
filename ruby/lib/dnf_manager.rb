@@ -23,7 +23,7 @@ class DnfManager
   end
 
   def update
-    @updater.step(' DNF Updates', 'Checking for DNF updates...') do
+    @updater.step(' DNF Updates', 'Checking for DNF updates...') do
       output = Shell.with_spinner('Checking DNF updates...') { Shell.capture('dnf', 'check-update') }
       parse_output(output)
       @count.positive? ? perform_update : notify_none
@@ -91,7 +91,7 @@ class DnfManager
   end
 
   def perform_kernel_maintenance
-    @updater.step(' Performing Driver/Kernel Maintenance', 'Maintenance detected...') do
+    @updater.step(' Performing Driver/Kernel Maintenance', 'Maintenance detected...') do
       new_kernel = query_new_kernel
       rebuild_kernel_modules(new_kernel)
       @needs_reboot = true
