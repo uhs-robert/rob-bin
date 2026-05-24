@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+running="$(uname -r)"
+latest="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort -V | tail -n1)"
+
+if [[ "$latest" == "$running" ]]; then
+  echo "No newer kernel installed; skipping akmods/dracut."
+  exit 0
+fi
+
+echo "New kernel detected:"
+echo "  running: $running"
+echo "  latest:  $latest"
+
+sudo akmods --kernels "$latest" --force
+sudo dracut --force "/boot/initramfs-${latest}.img" "$latest"
