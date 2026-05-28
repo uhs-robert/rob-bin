@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 HYPR_CONF="$HOME/.config/hypr/hyprland.conf"
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 INPUT_DIR="$(pwd)"           # Change this to your folder path
 OUTPUT_DIR="sanitized_notes" # Folder for cleaned files

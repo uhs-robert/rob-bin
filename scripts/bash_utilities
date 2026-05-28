@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Define ANSI escape codes as variables
 NC=$'\033[0m'

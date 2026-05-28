@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 CONFIG_PATH="$HOME/.config/aria2/aria2.conf"
 
 if [ $# -eq 0 ]; then

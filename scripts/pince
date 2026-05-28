@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 dir=~/Games/Pince
 exe="$dir"/PINCE-x86_64.AppImage
 cd "$dir"
