@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+TARGET_OWNER="${1:-uhs-robert}"
+TARGET_DIR="${2:-$HOME/Development}"
+
+mkdir -p "$TARGET_DIR"
+cd "$TARGET_DIR" || exit
+
+while IFS=$'\t' read -r name url <&3; do
+  if [[ -d "$name/.git" ]]; then
+    echo "Skipping $name; already cloned."
+    continue
+  fi
+
+  read -r -p "Clone $name? [y/N] " answer
+
+  case "$answer" in
+  [yY] | [yY][eE][sS])
+    git clone "$url"
+    ;;
+  *)
+    echo "Skipped $name"
+    ;;
+  esac
+done 3< <(gh repo list "$TARGET_OWNER" \
+  --limit 500 \
+  --json name,sshUrl,isFork \
+  --jq '.[] | select(.isFork == false) | [.name, .sshUrl] | @tsv')
