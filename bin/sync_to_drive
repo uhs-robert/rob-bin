@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 require 'fileutils'
-require_relative 'lib/terminal_style'
+require_relative '../lib/terminal_style'
 
 SOURCE_DIRS = [File.expand_path('~/Documents'), File.expand_path('~/Pictures')].freeze
 EXCLUDES    = ['/github-fmc**', '/git-misc**', '/Development**'].freeze

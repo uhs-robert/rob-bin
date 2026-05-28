@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+# shellcheck shell=bash
+# rob-bin/lib/ui.sh
 
 # Define ANSI escape codes as variables
 NC=$'\033[0m'

@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 require 'optparse'
-require_relative 'lib/terminal_style'
+require_relative '../lib/terminal_style'
 
 options = { delete_original: false, file_type: '*', format: 'zip' }
 

@@ -2,14 +2,14 @@
 # frozen_string_literal: true
 
 require 'fileutils'
-require_relative 'lib/tee_io'
-require_relative 'lib/notification'
-require_relative 'lib/shell'
-require_relative 'lib/user_interface'
-require_relative 'lib/options_parser'
-require_relative 'lib/dnf_manager'
-require_relative 'lib/flatpak_manager'
-require_relative 'lib/terminal_style'
+require_relative '../lib/tee_io'
+require_relative '../lib/notification'
+require_relative '../lib/shell'
+require_relative '../lib/user_interface'
+require_relative '../lib/options_parser'
+require_relative '../lib/dnf_manager'
+require_relative '../lib/flatpak_manager'
+require_relative '../lib/terminal_style'
 
 # Orchestrates the system update process
 class SystemUpdater

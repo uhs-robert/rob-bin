@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Source the formatting functions
-source "$(dirname "$0")/bash_utilities"
+source "$(dirname "$0")/../lib/ui.sh"
 
 # Set global variables
 user=$(whoami)

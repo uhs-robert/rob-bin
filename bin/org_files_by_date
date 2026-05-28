@@ -4,7 +4,7 @@
 require 'optparse'
 require 'fileutils'
 require 'find'
-require_relative 'lib/terminal_style'
+require_relative '../lib/terminal_style'
 
 options = { copy: false, delete_days: nil }
 

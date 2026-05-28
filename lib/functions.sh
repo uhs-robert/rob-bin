@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# scripts/functions.sh
+# shellcheck shell=bash
+# rob-bin/lib/functions.sh
 
 # Run net speed test
 netspeed() {
