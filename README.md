@@ -74,12 +74,6 @@ Interactively clones repos from a GitHub org/user. Prompts per repo, skips alrea
 
 Defaults: owner=`uhs-robert`, dir=`~/Development`
 
-### hyprkeys
-
-Reads `bindd` keybindings from `hyprland.conf`, displays them in Wofi, and dispatches the selected binding.
-
-**Requires:** `wofi`, `hyprctl`
-
 ### org_files_by_date
 
 Organizes files in a directory into `YYYY/MM` subdirectories based on modification time. Supports copy mode and deletion of old files.
