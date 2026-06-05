@@ -36,7 +36,9 @@ Tracks the last-seen item in `~/.local/state/arch-news-check/seen`. On network f
 
 **Requires:** `rss` gem (`gem install rss`), `xdg-open` (for opening articles)
 
-**Prompt options:** `y` = open in browser, `n` = abort upgrade, `m` = mark read without opening
+**Args:** `--yolo` = if you decline to read, warn and continue instead of blocking topgrade (don't say I didn't warn you...)
+
+**Prompt options:** `y` = open in browser, `n` = abort upgrade (or continue if `--yolo`), `m` = mark read without opening
 
 **topgrade setup** — add to `~/.config/topgrade.toml`:
 
