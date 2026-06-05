@@ -30,15 +30,15 @@ export PATH="$PATH:$HOME/your-path-to/rob-bin/bin/"
 
 ### arch_news_check
 
-Fetches the [Arch Linux news RSS feed](https://archlinux.org/feeds/news/) and blocks until the user acknowledges any unread items. Designed as a topgrade `pre_run` hook to prevent upgrades when there are breaking news items requiring manual intervention.
+Uses `paru -Pw`, or `yay -Pw` to fetch unread [Arch Linux news](https://archlinux.org/news/) relative to your system and blocks until the user acknowledges. Designed as a topgrade `pre_run` hook to prevent upgrades when there are breaking news items requiring manual intervention.
 
-Tracks the last-seen item in `~/.local/state/arch-news-check/seen`. On network failure, warns and exits 0 (non-blocking) with a link to check manually.
+On fetch failure, prompts to open the news page manually before proceeding. If neither `paru` nor `yay` is found, same fallback applies.
 
-**Requires:** `rss` gem (`gem install rss`), `xdg-open` (for opening articles)
+**Requires:** `paru` or `yay`, `xdg-open`
 
-**Args:** `--yolo` = if you decline to read, warn and continue instead of blocking topgrade (don't say I didn't warn you...)
+**Args:** `--yolo` = warn and continue instead of blocking when you skip reading (don't say I didn't warn you...)
 
-**Prompt options:** `y` = open in browser, `n` = abort upgrade (or continue if `--yolo`), `m` = mark read without opening
+**Prompt options:** `y` = acknowledge, `b` = open in browser and acknowledge, `n` = abort (or continue if `--yolo`)
 
 **topgrade setup** — add to `~/.config/topgrade.toml`:
 
