@@ -1,0 +1,96 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# ~/.local/bin/arch-news-check
+
+require 'rss'
+require 'net/http'
+require 'uri'
+require 'fileutils'
+
+NEWS_RSS = 'https://archlinux.org/feeds/news/'
+STATE_DIR = File.join(Dir.home, '.local', 'state', 'arch-news-check')
+SEEN_FILE = File.join(STATE_DIR, 'seen')
+
+FileUtils.mkdir_p(STATE_DIR)
+
+def item_id(item)
+  item.guid&.content || item.link
+end
+
+def read_seen
+  File.exist?(SEEN_FILE) ? File.read(SEEN_FILE).strip : nil
+end
+
+def write_seen(id)
+  File.write(SEEN_FILE, "#{id}\n")
+end
+
+def open_url(url)
+  system('xdg-open', url, out: File::NULL, err: File::NULL) == true
+end
+
+begin
+  uri = URI.parse(NEWS_RSS)
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = true
+  http.open_timeout = 5
+  http.read_timeout = 5
+  body = http.get(uri.request_uri).body
+  rss = RSS::Parser.parse(body, false)
+rescue StandardError => e
+  warn "Failed to fetch Arch News: #{e.message}"
+  warn "Check manually: #{NEWS_RSS}"
+  exit 0
+end
+
+items = rss.items
+seen = read_seen
+
+unread =
+  if seen.nil? || seen.empty?
+    [items.first].compact
+  else
+    items.take_while { |item| item_id(item) != seen }
+  end
+
+exit 0 if unread.empty?
+
+puts
+puts 'Unread Arch News:'
+puts
+
+unread.each_with_index do |item, index|
+  puts "#{index + 1}. #{item.title}"
+  puts "   #{item.pubDate || 'unknown date'}"
+  puts "   #{item.link}"
+  puts
+end
+
+tty = File.open('/dev/tty', 'r+')
+print 'Open unread news now? [y/N/m=mark read] '
+answer = tty.gets&.strip&.downcase
+tty.close
+
+if answer.nil?
+  warn 'No input received.'
+  exit 1
+end
+
+if %w[m mark].include?(answer)
+  write_seen(item_id(unread.first))
+  exit 0
+end
+
+exit 1 unless %w[y yes].include?(answer)
+
+failed = unread.reject { |item| open_url(item.link) }
+
+if failed.any?
+  warn "Failed to open #{failed.length} Arch News item(s)."
+  exit 1
+end
+
+write_seen(item_id(unread.first))
+
+exit 0
