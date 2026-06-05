@@ -28,6 +28,25 @@ export PATH="$PATH:$HOME/your-path-to/rob-bin/bin/"
 
 ## Scripts
 
+### arch_news_check
+
+Fetches the [Arch Linux news RSS feed](https://archlinux.org/feeds/news/) and blocks until the user acknowledges any unread items. Designed as a topgrade `pre_run` hook to prevent upgrades when there are breaking news items requiring manual intervention.
+
+Tracks the last-seen item in `~/.local/state/arch-news-check/seen`. On network failure, warns and exits 0 (non-blocking) with a link to check manually.
+
+**Requires:** `rss` gem (`gem install rss`), `xdg-open` (for opening articles)
+
+**Prompt options:** `y` = open in browser, `n` = abort upgrade, `m` = mark read without opening
+
+**topgrade setup** — add to `~/.config/topgrade.toml`:
+
+```toml
+[pre_run]
+"Check Arch News" = "arch-news-check"
+```
+
+> The script must be on your `$PATH` as `arch-news-check` (symlink or rename).
+
 ### 2pdf
 
 Converts document formats to PDF via LibreOffice. Supports `.doc`, `.docx`, `.odt`, `.rtf`, `.txt`, `.html`.
